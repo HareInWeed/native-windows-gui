@@ -387,7 +387,15 @@ impl<'a> DrawingBackend for &'a PlottersBackend {
 
     fn get_size(&self) -> (u32, u32) {
         let (width, height) = self.target().size;
-        let (width, height) = unsafe { high_dpi::physical_to_logical(width as i32, height as i32) };
+        let (width, height) = unsafe {
+            let (width, height) = (width as i32, height as i32);
+            use muldiv::MulDiv;
+            use winapi::um::winuser::USER_DEFAULT_SCREEN_DPI;
+            let dpi = high_dpi::dpi();
+            let width = width.mul_div_round(USER_DEFAULT_SCREEN_DPI, dpi).unwrap_or(width);
+            let height = height.mul_div_round(USER_DEFAULT_SCREEN_DPI, dpi).unwrap_or(height);
+            (width, height)
+        };
         (width as u32, height as u32)
     }
 
